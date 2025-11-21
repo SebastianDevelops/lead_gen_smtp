@@ -1,38 +1,24 @@
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { EmailConfig, SMTPConfig } from './types';
+import { EmailConfig } from './types';
 
 dotenv.config();
 
-class SMTPServer {
-  private transporter: nodemailer.Transporter;
+class EmailServer {
+  private resend: Resend;
   private app: express.Application;
 
   constructor() {
-    console.log('Initializing SMTP Server...');
-    const smtpConfig: SMTPConfig = {
-      host: process.env.SMTP_HOST || 'smtp.gmail.com',
-      port: parseInt(process.env.SMTP_PORT || '465'),
-      secure: process.env.SMTP_SECURE === 'true',
-      auth: {
-        user: process.env.SMTP_USER!,
-        pass: process.env.SMTP_PASS!
-      },
-      connectionTimeout: 300000,
-      greetingTimeout: 60000,
-      socketTimeout: 300000
-    };
-
-    console.log('Creating SMTP transporter...');
-    this.transporter = nodemailer.createTransport(smtpConfig);
+    console.log('Initializing Email Server...');
+    this.resend = new Resend('re_VgZL7cdc_JB6DLeXoevAzfRPdhqWHHL9Q');
     console.log('Setting up Express app...');
     this.app = express();
     this.app.use(cors());
     this.app.use(express.json({ limit: '50mb' }));
     this.setupRoutes();
-    console.log('SMTP Server initialized successfully');
+    console.log('Email Server initialized successfully');
   }
 
   private setupRoutes(): void {
@@ -49,19 +35,30 @@ class SMTPServer {
           return res.status(400).json({ error: 'Missing required fields: to, subject' });
         }
 
-        const mailOptions = {
-          from: process.env.SMTP_USER!,
+        const emailData: any = {
+          from: 'sebastian@nexfluence.tech',
           to,
           subject,
           text,
-          html,
-          attachments
+          html
         };
 
+        if (attachments && attachments.length > 0) {
+          emailData.attachments = attachments.map(att => ({
+            filename: att.filename,
+            content: typeof att.content === 'string' ? Buffer.from(att.content, 'utf-8') : att.content
+          }));
+        }
+
         console.log('Sending email...');
-        const result = await this.transporter.sendMail(mailOptions);
-        console.log(`Email sent successfully: ${result.messageId}`);
-        res.json({ success: true, messageId: result.messageId });
+        const { data, error } = await this.resend.emails.send(emailData);
+        
+        if (error) {
+          throw new Error(error.message);
+        }
+        
+        console.log(`Email sent successfully: ${data?.id}`);
+        res.json({ success: true, messageId: data?.id });
       } catch (error: any) {
         console.error('Email send error:', error.message);
         res.status(500).json({ error: error.message });
@@ -70,30 +67,41 @@ class SMTPServer {
 
     this.app.get('/health', (req, res) => {
       console.log('GET /health - Health check requested');
-      res.json({ status: 'OK', service: 'SMTP Server' });
+      res.json({ status: 'OK', service: 'Email Server' });
     });
     
     console.log('Routes configured successfully');
   }
 
   public async sendEmail(config: EmailConfig): Promise<string> {
-    const mailOptions = {
-      from: process.env.SMTP_USER!,
+    const emailData: any = {
+      from: 'sebastian@nexfluence.tech',
       to: config.to,
       subject: config.subject,
       text: config.text,
-      html: config.html,
-      attachments: config.attachments
+      html: config.html
     };
 
-    const result = await this.transporter.sendMail(mailOptions);
-    return result.messageId;
+    if (config.attachments && config.attachments.length > 0) {
+      emailData.attachments = config.attachments.map(att => ({
+        filename: att.filename,
+        content: typeof att.content === 'string' ? Buffer.from(att.content, 'utf-8') : att.content
+      }));
+    }
+
+    const { data, error } = await this.resend.emails.send(emailData);
+    
+    if (error) {
+      throw new Error(error.message);
+    }
+    
+    return data?.id || '';
   }
 
   public start(port: number = 3001): void {
     console.log(`Starting server on port ${port}...`);
     this.app.listen(port, () => {
-      console.log(`✅ SMTP Server running on http://localhost:${port}`);
+      console.log(`✅ Email Server running on http://localhost:${port}`);
       console.log('Available endpoints:');
       console.log(`  POST http://localhost:${port}/send-email`);
       console.log(`  GET  http://localhost:${port}/health`);
@@ -101,7 +109,7 @@ class SMTPServer {
   }
 }
 
-const server = new SMTPServer();
+const server = new EmailServer();
 server.start(parseInt(process.env.PORT || '3001'));
 
-export default SMTPServer;
+export default EmailServer;

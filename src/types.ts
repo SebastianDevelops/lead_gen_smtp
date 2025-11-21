@@ -10,15 +10,3 @@ export interface EmailConfig {
   }>;
 }
 
-export interface SMTPConfig {
-  host: string;
-  port: number;
-  secure: boolean;
-  auth: {
-    user: string;
-    pass: string;
-  };
-  connectionTimeout?: number;
-  greetingTimeout?: number;
-  socketTimeout?: number;
-}
