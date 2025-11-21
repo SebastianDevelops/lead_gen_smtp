@@ -27,7 +27,7 @@ class SMTPServer {
     console.log('Setting up Express app...');
     this.app = express();
     this.app.use(cors());
-    this.app.use(express.json());
+    this.app.use(express.json({ limit: '50mb' }));
     this.setupRoutes();
     console.log('SMTP Server initialized successfully');
   }
