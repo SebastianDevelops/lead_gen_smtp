@@ -1,5 +1,6 @@
 import nodemailer from 'nodemailer';
 import express from 'express';
+import cors from 'cors';
 import dotenv from 'dotenv';
 import { EmailConfig, SMTPConfig } from './types';
 
@@ -25,6 +26,7 @@ class SMTPServer {
     this.transporter = nodemailer.createTransport(smtpConfig);
     console.log('Setting up Express app...');
     this.app = express();
+    this.app.use(cors());
     this.app.use(express.json());
     this.setupRoutes();
     console.log('SMTP Server initialized successfully');
