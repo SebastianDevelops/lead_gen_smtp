@@ -19,7 +19,10 @@ class SMTPServer {
       auth: {
         user: process.env.SMTP_USER!,
         pass: process.env.SMTP_PASS!
-      }
+      },
+      connectionTimeout: 300000,
+      greetingTimeout: 60000,
+      socketTimeout: 300000
     };
 
     console.log('Creating SMTP transporter...');

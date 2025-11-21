@@ -18,4 +18,7 @@ export interface SMTPConfig {
     user: string;
     pass: string;
   };
+  connectionTimeout?: number;
+  greetingTimeout?: number;
+  socketTimeout?: number;
 }
