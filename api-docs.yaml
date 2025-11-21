@@ -1,0 +1,76 @@
+openapi: 3.0.0
+info:
+  title: SMTP Server API
+  version: 1.0.0
+  description: Send emails via Gmail SMTP
+servers:
+  - url: http://localhost:3001
+paths:
+  /send-email:
+    post:
+      summary: Send email with optional attachments
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - to
+                - subject
+              properties:
+                to:
+                  type: string
+                  format: email
+                  example: "recipient@example.com"
+                subject:
+                  type: string
+                  example: "Test Email"
+                text:
+                  type: string
+                  example: "Hello from SMTP server!"
+                html:
+                  type: string
+                  example: "<h1>Hello</h1>"
+                attachments:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      filename:
+                        type: string
+                        example: "data.csv"
+                      content:
+                        type: string
+                        example: "name,email\nJohn,john@example.com"
+      responses:
+        '200':
+          description: Email sent successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  messageId:
+                    type: string
+        '400':
+          description: Missing required fields
+        '500':
+          description: Server error
+  /health:
+    get:
+      summary: Health check
+      responses:
+        '200':
+          description: Service status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  service:
+                    type: string
