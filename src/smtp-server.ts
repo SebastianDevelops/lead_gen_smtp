@@ -1,6 +1,9 @@
 import nodemailer from 'nodemailer';
 import express from 'express';
+import dotenv from 'dotenv';
 import { EmailConfig, SMTPConfig } from './types';
+
+dotenv.config();
 
 class SMTPServer {
   private transporter: nodemailer.Transporter;
@@ -9,12 +12,12 @@ class SMTPServer {
   constructor() {
     console.log('Initializing SMTP Server...');
     const smtpConfig: SMTPConfig = {
-      host: 'smtp.gmail.com',
-      port: 465,
-      secure: true, // SSL
+      host: process.env.SMTP_HOST || 'smtp.gmail.com',
+      port: parseInt(process.env.SMTP_PORT || '465'),
+      secure: process.env.SMTP_SECURE === 'true',
       auth: {
-        user: 'sebastiandevelops@gmail.com',
-        pass: 'gcae hjrr jzlx hhoc'
+        user: process.env.SMTP_USER!,
+        pass: process.env.SMTP_PASS!
       }
     };
 
@@ -42,7 +45,7 @@ class SMTPServer {
         }
 
         const mailOptions = {
-          from: 'sebastiandevelops@gmail.com',
+          from: process.env.SMTP_USER!,
           to,
           subject,
           text,
@@ -70,7 +73,7 @@ class SMTPServer {
 
   public async sendEmail(config: EmailConfig): Promise<string> {
     const mailOptions = {
-      from: 'sebastiandevelops@gmail.com',
+      from: process.env.SMTP_USER!,
       to: config.to,
       subject: config.subject,
       text: config.text,
@@ -94,6 +97,6 @@ class SMTPServer {
 }
 
 const server = new SMTPServer();
-server.start(3001);
+server.start(parseInt(process.env.PORT || '3001'));
 
 export default SMTPServer;
